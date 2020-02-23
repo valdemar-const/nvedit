@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.12)
 
 project(
   text_editor
-  VERSION 0.1
+  VERSION 0.1.1
   DESCRIPTION "opengl learning with fltk")
 
 find_package(FLTK REQUIRED)
@@ -16,6 +16,6 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_C_EXTENSIONS OFF)
 add_compile_options(-Wall -Wextra -pedantic)
 
-add_executable(NVEdit src/main.cpp src/EditorWindow.cpp)
+add_executable(NVEdit src/main.cpp src/EditorWindow.cpp src/FileTab.cpp)
 target_include_directories(NVEdit PRIVATE ${FLTK_INCLUDE_DIR} include)
 target_link_libraries(NVEdit PRIVATE ${FLTK_LIBRARIES})

@@ -1,102 +1,130 @@
 #include "EditorWindow.hpp"
 
-#include <cstdlib>
-#include <cstdio>
 #include <cstring>
-#include <vector>
-#include <string>
 
 #include <FL/Fl_Group.H>
 #include <FL/Fl_Menu.H>
 #include <FL/Fl_Menu_Item.H>
-#include <FL/Fl_Text_Editor.H>
 #include <FL/Fl_Text_Buffer.H>
+#include <FL/Fl_Native_File_Chooser.H>
 #include <FL/filename.H>
 
-class EditorWindow::FileBuffer : public Fl_Group {
-public:
-    FileBuffer(int x, int y, int w, int h, char *new_name, Fl_Text_Buffer *f_buff, const std::string path = {});
-    ~FileBuffer();
-
-private:
-    Fl_Text_Editor *editor;
-    std::string full_path;
-};
-
-EditorWindow::FileBuffer::FileBuffer(int x, int y, int w, int h, char *new_name, Fl_Text_Buffer *f_buff, const std::string path)
-    : Fl_Group(x, y, w, h, new_name)
-    , full_path(path) {
-    editor = new Fl_Text_Editor(x, y, w, h);
-    editor->buffer(f_buff);
-    add(editor);
-}
-
-EditorWindow::FileBuffer::~FileBuffer() {
-    free((void *)label());
-    label(NULL);
-}
-
-static char *get_new_name();
-/**
- * Construct a new Editor Window. If opened_buffers is empty, create new file buffer
- */
+// Construct a new Editor Window. If opened_buffers is empty, create new file buffer
 EditorWindow::EditorWindow(int w, int h, const char *t)
-    : Fl_Double_Window(w, h, t) {
+        : Fl_Double_Window(w, h, t) {
     // create main menu
     menu = init_menu(0, 0, w);
-    buffers_tabs = new Fl_Tabs(0, 25, w, h - 25);
+    buffers_tabs = init_tabs(0, 0 + menu_height, w, h - menu_height);
     resizable(buffers_tabs);
+    if (!buffers_tabs->children()) {
+        create_new();
+    }
     show();
 }
 
 EditorWindow::~EditorWindow() {}
 
-/**
- * Create new menu bar with callbacks
- */
+// Create new menu bar with callbacks
 Fl_Menu_Bar *EditorWindow::init_menu(int x, int y, int w, int h) {
     Fl_Menu_Bar *new_menu = new Fl_Menu_Bar(x, y, w, h);
-    // new_menu->box(FL_FLAT_BOX);
+    new_menu->box(FL_FLAT_BOX);
     new_menu->add("File/&New File", FL_COMMAND + 'n', (Fl_Callback *)new_cb, (void *)this);
     new_menu->add("File/&Open File...", FL_COMMAND + 'o', (Fl_Callback *)open_cb, (void *)this, FL_MENU_DIVIDER);
     new_menu->add("File/&Save", FL_COMMAND + 's', save_cb, (void *)this);
     new_menu->add("File/&Save As...", FL_COMMAND + FL_SHIFT + 's', saveas_cb, (void *)this, FL_MENU_DIVIDER);
-    new_menu->add("File/&Close", FL_COMMAND + 'q', close_cb, (void *)this);
+    new_menu->add("File/Close", FL_COMMAND + 'q', close_cb, (void *)this);
     new_menu->add("File/&Quit", FL_COMMAND + FL_SHIFT + 'q', quit_cb);
 
     return new_menu;
 }
 
-void EditorWindow::create_empty() {
-    FileBuffer *new_file = new FileBuffer(0, 25 + 25, this->w(), this->h() - 25 - 25, get_new_name(), new Fl_Text_Buffer);
+Fl_Tabs *EditorWindow::init_tabs(int x, int y, int w, int h) {
+    Fl_Tabs *new_tabs = new Fl_Tabs(x, y, w, h);
+    new_tabs->box(FL_THIN_UP_BOX);
+    new_tabs->selection_color(FL_WHITE);
+    return new_tabs;
+}
+
+void EditorWindow::create_new(const std::string &path) {
+    int draw_pos = menu_height + tab_height;
+    FileTab *new_file = new FileTab(0, draw_pos, this->w(), this->h() - draw_pos, path);
     buffers_tabs->add(new_file);
     buffers_tabs->resizable(new_file);
+    buffers_tabs->value(new_file);
+    buffers_tabs->redraw();
+    redraw();
+}
+
+void EditorWindow::save() {
+    FileTab *current = (FileTab *)buffers_tabs->value();
+    if (!current->full_path().empty()) {
+        current->editor()->buffer()->savefile(current->full_path().data());
+    } else {
+        saveas();
+    }
+}
+
+void EditorWindow::saveas() {
+    // choose file name
+    Fl_Native_File_Chooser file_chooser;
+    file_chooser.title("Choose file name");
+    file_chooser.type(Fl_Native_File_Chooser::BROWSE_SAVE_FILE);
+    if (file_chooser.show()) {
+        return;
+    }
+
+    // set new filepath FileTab, get name from path, save buffer to file
+    FileTab *current = (FileTab *)buffers_tabs->value();
+    current->full_path(file_chooser.filename());
+    redraw();
+}
+
+void EditorWindow::close() {
+    FileTab *current = (FileTab *)buffers_tabs->value();
+    if (!current) {
+        // no buffers
+        return;
+    }
+    buffers_tabs->remove(current);
+    Fl::delete_widget(current);
+    redraw();
 }
 
 void EditorWindow::new_cb(Fl_Widget *o, void *e) {
     // create new buffer
     EditorWindow *editor = (EditorWindow *)e;
-    // FileBuffer *new_file = new FileBuffer(0, 25 + 25, editor->w(), editor->h() - 25 - 25, get_new_name(), new Fl_Text_Buffer);
-    FileBuffer *new_file = new FileBuffer(0, 25 + 25, editor->w(), editor->h() - 25 - 25, get_new_name(), new Fl_Text_Buffer);
-    editor->buffers_tabs->add(new_file);
-    editor->buffers_tabs->resizable(new_file);
-    editor->buffers_tabs->redraw();
+    editor->create_new();
 }
 
-void EditorWindow::open_cb(Fl_Widget *o, void *) {
-    // open exiting file
+void EditorWindow::open_cb(Fl_Widget *o, void *e) {
+    // open existing file
+    EditorWindow *editor = (EditorWindow *)e;
+
+    Fl_Native_File_Chooser file_chooser;
+    file_chooser.title("Choose file to open");
+    file_chooser.type(Fl_Native_File_Chooser::BROWSE_FILE);
+    if (file_chooser.show()) {
+        return;
+    }
+    editor->create_new({file_chooser.filename()});
 }
 
 void EditorWindow::save_cb(Fl_Widget *o, void *e) {
     // save existing file
+    EditorWindow *editor = (EditorWindow *)e;
+    editor->save();
 }
 
 void EditorWindow::saveas_cb(Fl_Widget *o, void *e) {
     // save file as new file
+    EditorWindow *editor = (EditorWindow *)e;
+    editor->saveas();
 }
 
 void EditorWindow::close_cb(Fl_Widget *o, void *e) {
     /// close current buffer
+    EditorWindow *editor = (EditorWindow *)e;
+    editor->close();
 }
 
 void EditorWindow::quit_cb(Fl_Widget *o, void *) {
@@ -108,7 +136,7 @@ void EditorWindow::quit_cb(Fl_Widget *o, void *) {
  * 
  * @return char* - pointer to name string. Must be free()-d to avoid memory leak.
  */
-static char *get_new_name() {
+char *EditorWindow::get_new_name() {
     static int number {1};
     static const char basename[] = "Unnamed-";
     char *new_name = NULL;
