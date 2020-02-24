@@ -46,6 +46,7 @@ class EditorWindow::FileTab : public Fl_Group {
     void full_path(const std::string &new_path);
 
  private:
+    Fl_Text_Buffer *buffer_;
     Fl_Text_Editor *editor_;
     std::string full_path_;
 };

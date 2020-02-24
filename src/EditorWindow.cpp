@@ -85,7 +85,6 @@ void EditorWindow::close() {
         // no buffers
         return;
     }
-    buffers_tabs->remove(current);
     Fl::delete_widget(current);
     redraw();
 }
