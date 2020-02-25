@@ -36,17 +36,14 @@ class EditorWindow : public Fl_Double_Window {
     static char *get_new_name();
 };
 
-class EditorWindow::FileTab : public Fl_Group {
+class EditorWindow::FileTab : public Fl_Text_Editor {
  public:
     FileTab(int x, int y, int w, int h, const std::string &path = {});
     ~FileTab();
-
-    Fl_Text_Editor *editor() { return editor_; };
     std::string full_path() { return full_path_; };
-    void full_path(const std::string &new_path);
+    void save_path(const std::string &new_path);
 
  private:
     Fl_Text_Buffer *buffer_;
-    Fl_Text_Editor *editor_;
     std::string full_path_;
 };

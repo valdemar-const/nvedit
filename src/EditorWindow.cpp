@@ -47,7 +47,7 @@ Fl_Tabs *EditorWindow::init_tabs(int x, int y, int w, int h) {
 
 void EditorWindow::create_new(const std::string &path) {
     int draw_pos = menu_height + tab_height;
-    FileTab *new_file = new FileTab(0, draw_pos, this->w(), this->h() - draw_pos, path);
+    Fl_Group *new_file = new FileTab(0, draw_pos, this->w(), this->h() - draw_pos, path);
     buffers_tabs->add(new_file);
     buffers_tabs->resizable(new_file);
     buffers_tabs->value(new_file);
@@ -57,7 +57,7 @@ void EditorWindow::create_new(const std::string &path) {
 void EditorWindow::save() {
     FileTab *current = (FileTab *)buffers_tabs->value();
     if (!current->full_path().empty()) {
-        current->editor()->buffer()->savefile(current->full_path().data());
+        current->buffer()->savefile(current->full_path().data());
     } else {
         saveas();
     }
@@ -73,20 +73,17 @@ void EditorWindow::saveas() {
     }
     // set new filepath FileTab, get name from path, save buffer to file
     FileTab *current = (FileTab *)buffers_tabs->value();
-    current->full_path(file_chooser.filename());
+    current->save_path(file_chooser.filename());
     redraw();
 }
 
 void EditorWindow::close() {
-    FileTab *current = (FileTab *)buffers_tabs->value();
+    Fl_Group *current = (FileTab *)buffers_tabs->value();
     if (!current) {
         // no buffers
         return;
     }
-    // if delete the widget instead of hiding it will cause a segmentation fault when new Text_buffer created. 
-    current->hide();
-    buffers_tabs->remove(current);
-    // Fl::delete_widget(current);
+    Fl::delete_widget(current);
     redraw();
 }
 
