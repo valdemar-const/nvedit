@@ -51,7 +51,6 @@ void EditorWindow::create_new(const std::string &path) {
     buffers_tabs->add(new_file);
     buffers_tabs->resizable(new_file);
     buffers_tabs->value(new_file);
-    buffers_tabs->redraw();
     redraw();
 }
 
@@ -72,7 +71,6 @@ void EditorWindow::saveas() {
     if (file_chooser.show()) {
         return;
     }
-
     // set new filepath FileTab, get name from path, save buffer to file
     FileTab *current = (FileTab *)buffers_tabs->value();
     current->full_path(file_chooser.filename());
@@ -85,7 +83,10 @@ void EditorWindow::close() {
         // no buffers
         return;
     }
-    Fl::delete_widget(current);
+    // if delete the widget instead of hiding it will cause a segmentation fault when new Text_buffer created. 
+    current->hide();
+    buffers_tabs->remove(current);
+    // Fl::delete_widget(current);
     redraw();
 }
 
@@ -132,7 +133,6 @@ void EditorWindow::quit_cb(Fl_Widget *o, void *) {
 
 /**
  * Generate the new name for non saved buffer
- * 
  * @return char* - pointer to name string. Must be free()-d to avoid memory leak.
  */
 char *EditorWindow::get_new_name() {
