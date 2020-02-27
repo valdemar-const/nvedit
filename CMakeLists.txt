@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.12)
 project(
   text_editor
   VERSION 0.1.1
-  DESCRIPTION "opengl learning with fltk")
+  DESCRIPTION "simple text editor created with fltk")
 
 find_package(FLTK REQUIRED)
 
