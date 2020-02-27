@@ -58,7 +58,7 @@ void EditorWindow::create_new(const std::string &path) {
 void EditorWindow::save() {
     FileTab *current = (FileTab *)buffers_tabs->value();
     if (!current->full_path().empty()) {
-        current->save_path(current->full_path().data());
+        current->save_path();
     } else {
         saveas();
     }

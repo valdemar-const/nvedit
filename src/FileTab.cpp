@@ -30,13 +30,13 @@ EditorWindow::FileTab::~FileTab() {
     editor_->buffer(0);
 }
 
-void EditorWindow::FileTab::save_path(const std::string &new_path = {}) {
+void EditorWindow::FileTab::save_path(const std::string &new_path) {
     if (!new_path.empty()) {
         full_path_ = new_path;
-    } else if (!full_path_.empty()) {
-        editor_->buffer()->savefile(full_path_.data());
-        free((void *)label());
-        label(strdup(fl_filename_name(full_path_.data())));
-    } else
+    }
+    if (full_path_.empty())
         return;
+    editor_->buffer()->savefile(full_path_.data());
+    free((void *)label());
+    label(strdup(fl_filename_name(full_path_.data())));
 }
