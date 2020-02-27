@@ -12,9 +12,10 @@
 // Construct a new Editor Window. If opened_buffers is empty, create new file buffer
 EditorWindow::EditorWindow(int w, int h, const char *t)
         : Fl_Double_Window(w, h, t) {
-    // create main menu
+    begin();
     menu = init_menu(0, 0, w);
     buffers_tabs = init_tabs(0, 0 + menu_height, w, h - menu_height);
+    end();
     resizable(buffers_tabs);
     if (!buffers_tabs->children()) {
         create_new();
@@ -57,7 +58,7 @@ void EditorWindow::create_new(const std::string &path) {
 void EditorWindow::save() {
     FileTab *current = (FileTab *)buffers_tabs->value();
     if (!current->full_path().empty()) {
-        current->editor()->buffer()->savefile(current->full_path().data());
+        current->save_path(current->full_path().data());
     } else {
         saveas();
     }
@@ -73,7 +74,7 @@ void EditorWindow::saveas() {
     }
     // set new filepath FileTab, get name from path, save buffer to file
     FileTab *current = (FileTab *)buffers_tabs->value();
-    current->full_path(file_chooser.filename());
+    current->save_path(file_chooser.filename());
     redraw();
 }
 
@@ -83,10 +84,7 @@ void EditorWindow::close() {
         // no buffers
         return;
     }
-    // if delete the widget instead of hiding it will cause a segmentation fault when new Text_buffer created. 
-    current->hide();
-    buffers_tabs->remove(current);
-    // Fl::delete_widget(current);
+    Fl::delete_widget(current);
     redraw();
 }
 
