@@ -36,7 +36,7 @@ class EditorWindow : public Fl_Double_Window {
     static char *get_new_name();
 };
 
-class EditorWindow::FileTab : public Fl_Text_Editor {
+class EditorWindow::FileTab : public Fl_Group {
  public:
     FileTab(int x, int y, int w, int h, const std::string &path = {});
     ~FileTab();
@@ -44,6 +44,7 @@ class EditorWindow::FileTab : public Fl_Text_Editor {
     void save_path(const std::string &new_path);
 
  private:
+    Fl_Text_Editor *editor_;
     Fl_Text_Buffer *buffer_;
     std::string full_path_;
 };

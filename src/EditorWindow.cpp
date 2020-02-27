@@ -12,9 +12,10 @@
 // Construct a new Editor Window. If opened_buffers is empty, create new file buffer
 EditorWindow::EditorWindow(int w, int h, const char *t)
         : Fl_Double_Window(w, h, t) {
-    // create main menu
+    begin();
     menu = init_menu(0, 0, w);
     buffers_tabs = init_tabs(0, 0 + menu_height, w, h - menu_height);
+    end();
     resizable(buffers_tabs);
     if (!buffers_tabs->children()) {
         create_new();
@@ -47,7 +48,7 @@ Fl_Tabs *EditorWindow::init_tabs(int x, int y, int w, int h) {
 
 void EditorWindow::create_new(const std::string &path) {
     int draw_pos = menu_height + tab_height;
-    Fl_Group *new_file = new FileTab(0, draw_pos, this->w(), this->h() - draw_pos, path);
+    FileTab *new_file = new FileTab(0, draw_pos, this->w(), this->h() - draw_pos, path);
     buffers_tabs->add(new_file);
     buffers_tabs->resizable(new_file);
     buffers_tabs->value(new_file);
@@ -57,7 +58,7 @@ void EditorWindow::create_new(const std::string &path) {
 void EditorWindow::save() {
     FileTab *current = (FileTab *)buffers_tabs->value();
     if (!current->full_path().empty()) {
-        current->buffer()->savefile(current->full_path().data());
+        current->save_path(current->full_path().data());
     } else {
         saveas();
     }
@@ -78,7 +79,7 @@ void EditorWindow::saveas() {
 }
 
 void EditorWindow::close() {
-    Fl_Group *current = (FileTab *)buffers_tabs->value();
+    FileTab *current = (FileTab *)buffers_tabs->value();
     if (!current) {
         // no buffers
         return;
